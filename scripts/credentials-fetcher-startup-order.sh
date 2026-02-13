@@ -19,4 +19,4 @@ ExecStartPre=/bin/bash -c 'until [ -S /var/credentials-fetcher/socket/credential
 EOF
 echo "Done! The ECS agent service will now start credentials-fetcher as a requirement. Restarting ECS agent if already running."
 systemctl daemon-reload
-systemctl is-running --quiet ecs.service 2>/dev/null && systemctl restart ecs.service || :
+systemctl is-active --quiet ecs.service 2>/dev/null && systemctl restart ecs.service || :

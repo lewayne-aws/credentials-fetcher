@@ -37,6 +37,9 @@ BuildRequires:  systemd-rpm-macros
 # Define _unitdir if not already defined
 %{!?_unitdir: %global _unitdir /usr/lib/systemd/system}
 
+# Define _libexec if not already defined
+${!?_libexec: %global _libexec /usr/libexec}
+
 # Following are needed to prevent RPM build errors
 %define _missing_build_ids_terminate_build 0
 %define debug_package %{nil}
@@ -62,6 +65,7 @@ mkdir -p %{buildroot}/usr/sbin
 mkdir -p %{buildroot}%{_unitdir}
 mkdir -p %{buildroot}/var/credentials-fetcher/{krbdir,socket,logging}
 mkdir -p %{buildroot}/etc/
+mkdir -p %{buildroot}%{_libexec}
 
 # Copy binary and service file to buildroot
 cp ./opensource/bin/credentials-fetcherd %{buildroot}/usr/sbin/credentials-fetcher
@@ -100,6 +104,10 @@ if [ -d "/usr/lib/systemd/system/ecs.service.d" ]; then
     fi
 fi
 /usr/bin/systemctl daemon-reload
+# Service continues running after a full removal, so stop it
+if [ $1 -eq 0 ]; then
+    /usr/bin/systemctl stop credentials-fetcher.service
+fi
 
 %changelog
 * Wed Jan 28 2026 Muskan Lalit <muskanl@amazon.com> - 2.0.0
