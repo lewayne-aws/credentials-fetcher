@@ -67,6 +67,9 @@ mkdir -p %{buildroot}/etc/
 cp ./opensource/bin/credentials-fetcherd %{buildroot}/usr/sbin/credentials-fetcher
 cp ./configuration/bin/credentials-fetcher.service %{buildroot}%{_unitdir}/
 
+# Copy startup-order userdata script into libexec
+cp ./scripts/credentials-fetcher-startup-order.sh %{buildroot}%{_libexec}/
+
 # Copy config file to buildroot
 cp ./configuration/conf/credentials-fetcher.conf %{buildroot}/etc/
 
@@ -81,12 +84,21 @@ rm -rf ${RPM_BUILD_ROOT}
 %dir /var/credentials-fetcher/krbdir
 %dir /var/credentials-fetcher/socket
 %dir /var/credentials-fetcher/logging
+%{_libexec}/credentials-fetcher-startup-order.sh
 
 %post
 chmod 644 %{_unitdir}/%{SERVICE_NAME}
 /usr/bin/systemctl daemon-reload
 
 %postun
+# If the user ran our systemd dependency script, there will be an out-of-package systemd drop-in for ECS agent.
+# Remove this, and also clean up the drop-in directory, but only if it is empty after removing ours.
+if [ -d "/usr/lib/systemd/system/ecs.service.d" ]; then
+    rm /usr/lib/systemd/system/ecs.service.d/require-credentials-fetcher.conf
+    if [ -z "$( ls -A '/usr/lib/systemd/system/ecs.service.d' )" ]; then
+        rm -rf /usr/lib/systemd/system/ecs.service.d
+    fi
+fi
 /usr/bin/systemctl daemon-reload
 
 %changelog
